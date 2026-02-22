@@ -24,7 +24,7 @@ const nextConfig = {
     ],
   },
 
-  webpack(config) {
+  webpack(config, { isServer }) {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = config.module.rules.find((rule) =>
       rule.test?.test?.('.svg')
@@ -53,12 +53,29 @@ const nextConfig = {
     // Modify the file loader rule to ignore *.svg, since we have it handled now.
     fileLoaderRule.exclude = /\.svg$/i;
 
+    // Cloudflare Workers/Pages compatibility
     config.resolve.fallback = {
       ...config.resolve.fallback,
       net: false,
       tls: false,
       crypto: false,
+      fs: false,
+      path: false,
+      os: false,
+      stream: false,
+      http: false,
+      https: false,
+      zlib: false,
+      async_hooks: false,
     };
+
+    // Exclude redis package in edge runtime
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        redis: false,
+      };
+    }
 
     return config;
   },
